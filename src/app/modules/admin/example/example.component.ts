@@ -1,33 +1,28 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { WebSocketService } from './exemple..service';
+// app.component.ts
+import { Component, OnDestroy, OnInit ,ViewEncapsulation } from '@angular/core';
+import { WebSocketService } from './example..service';
 
 @Component({
-    selector     : 'example',
+  selector     : 'example',
     standalone   : true,
     templateUrl  : './example.component.html',
     encapsulation: ViewEncapsulation.None,
 })
-export class ExampleComponent implements OnInit
-{
-    messageContent: string = '';
-  messageDetails: string = '';
+export class ExampleComponent implements OnInit {
+  originalMessage: string = '';
   transformedMessage: string = '';
 
   constructor(private webSocketService: WebSocketService) {}
 
-  ngOnInit() {
-    this.webSocketService.messages.subscribe((message: string) => {
-      console.log('Received message:', message);
-      this.handleMessage(message);
+  ngOnInit(): void {
+    this.webSocketService.connect('ws://localhost:8091/ws/messages');
+    this.webSocketService.onMessage().subscribe((message: string) => {
+      this.originalMessage = message;
+      console.log('Original message:', message);
     });
-  }
-
-  handleMessage(message: string) {
-    this.messageContent = message;
-    this.messageDetails = '';
-    this.transformedMessage = '';
-    
-    // Example: Displaying the message directly
-    this.transformedMessage = message;
+    this.webSocketService.onTransformedMessage().subscribe((message: string) => {
+      this.transformedMessage = message;
+      console.log('Transformed message:', message);
+    });
   }
 }
