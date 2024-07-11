@@ -1,5 +1,5 @@
 // app.component.ts
-import { Component, OnDestroy, OnInit ,ViewEncapsulation } from '@angular/core';
+import { Component, OnInit ,ViewEncapsulation } from '@angular/core';
 import { WebSocketService } from './example..service';
 
 @Component({
