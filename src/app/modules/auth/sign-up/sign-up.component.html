@@ -34,16 +34,7 @@
                 #signUpNgForm="ngForm">
 
                 <!-- Name field -->
-                <mat-form-field class="w-full">
-                    <mat-label>Username</mat-label>
-                    <input
-                        id="name"
-                        matInput
-                        [formControlName]="'name'">
-                    <mat-error *ngIf="signUpForm.get('name').hasError('required')">
-                        username is required
-                    </mat-error>
-                </mat-form-field>
+                
 
                 <!-- Email field -->
                 <mat-form-field class="w-full">

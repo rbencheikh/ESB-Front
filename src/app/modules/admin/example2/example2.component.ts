@@ -11,6 +11,8 @@ import { signal } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FileUploadService } from './file-upload.service';
+import { MatButtonModule } from '@angular/material/button';
+
 
 export interface Elements {
   name: string;
@@ -20,7 +22,8 @@ export interface Elements {
     selector     : 'example2',
     standalone   : true,
     templateUrl  : './example2.component.html',
-    imports: [MatFormFieldModule, MatChipsModule, MatIconModule, HttpClientModule, NgFor, NgIf, NgClass],
+    styleUrls: ['./example2.component.scss'],
+    imports: [MatFormFieldModule, MatChipsModule, MatIconModule, HttpClientModule, NgFor, NgIf, NgClass,MatButtonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ElementsService,FileUploadService]
 })
@@ -29,13 +32,23 @@ export class Example2Component implements OnInit {
   readonly separatorKeysCodes = [ENTER, COMMA] as const;
   readonly elements = signal<Elements[]>([]);
   readonly announcer = inject(LiveAnnouncer);
- // private elementsService: ElementsService = inject(ElementsService);
   readonly selectedElementText = signal<string>('');
-  //private http: HttpClient = inject(HttpClient); 
   file: File | null = null;
   responseMessage: string | null = null;
   fileContent: string | ArrayBuffer | null = null;
-
+  
+  private initialElements: Elements[] = [
+    { name: '[' },
+    { name: ']' },
+    { name: ':' },
+    { name: '{' },
+    { name: '}' },
+    { name: ',' },
+    { name: '<' },
+    { name: '>' },
+    { name: '/>' },
+    { name: '"' },
+  ];
 
   constructor(private fileUploadService: FileUploadService,private elementsService: ElementsService,
     private http: HttpClient) { }
@@ -43,30 +56,25 @@ export class Example2Component implements OnInit {
   
  
   ngOnInit() {
-    this.fetchElements();
-
-    // Add initial values to the elements
-    const initialElements = [
-      { name: '[' },
-      { name: ']' },
-      { name: ':' },
-      { name: '{' },
-      { name: '}' },
-      { name: ',' },
-      { name: '<' },
-      { name: '>' },
-      { name: '/>' },
-      { name: '"' },
-    ];
-    this.elements.set(initialElements);
+    //this.fetchElements();
+    this.elements.set(this.initialElements);
   }
 
   fetchElements() {
     this.elementsService.getElements().subscribe((data: Set<string>) => {
-      this.elements.update(existingElements => [
-        ...existingElements,
-        ...Array.from(data).map(name => ({ name }))
-      ]);
+      console.log('Fetched elements:', data);
+  
+      // Convert the fetched data to the required format
+      const newElements = Array.from(data).map(name => ({ name }));
+  
+      // Combine initial elements with the new fetched elements
+      const combinedElements = [
+        ...this.initialElements,
+        ...newElements
+      ];
+  
+      // Update the elements signal with the combined data
+      this.elements.set(combinedElements);
     });
   }
 
@@ -130,16 +138,28 @@ export class Example2Component implements OnInit {
     const content = this.selectedElementText();
     const blob = new Blob([content], { type: 'text/plain' });
     const formData = new FormData();
-    formData.append('file', blob, 'content.txt');
+    const filename = this.file ? this.file.name : 'content.txt';
+    formData.append('file', blob, filename);
 
     this.http.post('http://localhost:8222/messages/uploadFile1', formData).subscribe(
       response => {
         console.log('File submitted successfully', response);
+        this.resetElements();
+        this.clearTextarea();
       },
       error => {
         console.error('Error submitting file', error);
+        this.resetElements();
+        this.clearTextarea();
       }
     );
+  }
+
+  resetElements() {
+    this.elements.set(this.initialElements);
+  }
+  clearTextarea() {
+    this.selectedElementText.set('');
   }
 
   onFileSelected(event: Event): void {
@@ -156,7 +176,6 @@ export class Example2Component implements OnInit {
 
       // Upload file automatically after selecting
       this.uploadFile();
-      this.fetchElements();
     }
   }
 
@@ -165,14 +184,21 @@ export class Example2Component implements OnInit {
       this.fileUploadService.uploadFile(this.file, 'C:/Users/rbencheikh/Desktop/Input').subscribe(
         (response) => {
           this.responseMessage = response;
+          console.log('File uploaded successfully. Delaying fetch...');
+          setTimeout(() => {
+            this.fetchElements();  // Add a slight delay before fetching
+          }, 800);  // Delay in milliseconds
         },
         (error) => {
           this.responseMessage = `Error: ${error.message}`;
+          console.log('Error uploading file. Delaying fetch...');
+          setTimeout(() => {
+            this.fetchElements();  // Add a slight delay before fetching
+          }, 800);  // Delay in milliseconds
         }
       );
     } else {
       this.responseMessage = 'Please select a file first.';
     }
   }
-
 }
